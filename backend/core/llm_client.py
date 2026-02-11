@@ -1,4 +1,11 @@
-from backend.config import GEMINI_API_KEY
+import os
+
+# 🔐 Optional config import (CI-safe)
+try:
+    from backend.config import GEMINI_API_KEY
+except ImportError:
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 
 def generate_response(full_prompt: str) -> str:
     """
