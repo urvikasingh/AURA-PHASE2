@@ -45,3 +45,8 @@ CREATE TABLE conversation_context (
     CONSTRAINT fk_context_user
         FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+--adding column password in table users
+
+ALTER TABLE users
+ADD password_hash VARCHAR(255);
