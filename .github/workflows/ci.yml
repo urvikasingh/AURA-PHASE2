@@ -27,4 +27,5 @@ jobs:
 
       - name: Run tests
         run: |
+          export TEST_MODE=true
           pytest
