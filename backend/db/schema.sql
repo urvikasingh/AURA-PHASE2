@@ -52,9 +52,9 @@ ALTER TABLE users
 ADD password_hash VARCHAR(255);
 
 
-/* =========================
-   ACADEMIC DOMAIN MEMORY
-   ========================= */
+
+ --ACADEMIC DOMAIN MEMORY
+
 CREATE TABLE academic_memory (
     id INT IDENTITY(1,1) PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
