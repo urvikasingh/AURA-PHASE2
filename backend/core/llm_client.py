@@ -7,30 +7,30 @@ except ImportError:
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 
-def generate_response(full_prompt: str) -> str:
+def generate_response(
+    full_prompt: str,
+    generation_config: dict | None = None
+) -> str:
     """
-    LLM wrapper.
-    - Real Gemini in prod/dev
-    - Deterministic stub in TEST_MODE
+    Shared LLM wrapper.
+    - USP uses default config
+    - Academic / other domains pass their own config
+    - TEST_MODE returns deterministic outputs
     """
 
-    # 🧪 TEST MODE: return deterministic responses
+    # 🧪 TEST MODE
     if os.getenv("TEST_MODE") == "true":
         prompt_lower = full_prompt.lower()
 
-        # Greeting
         if "hello" in prompt_lower or "hi" in prompt_lower:
             return "Hello. How can I help you today?"
 
-        # Hallucination refusal
         if "ceo" in prompt_lower or "who is my" in prompt_lower:
             return "I don’t have enough information to answer that."
 
-        # Medical refusal
         if "medicine" in prompt_lower or "chest pain" in prompt_lower:
             return "I can’t provide medical advice. Please consult a doctor."
 
-        # General knowledge fallback
         if "gravity" in prompt_lower:
             return "Gravity is a force that attracts objects toward each other."
 
@@ -45,19 +45,33 @@ def generate_response(full_prompt: str) -> str:
 
         client = genai.Client(api_key=GEMINI_API_KEY)
 
+        # ✅ Default config (USP-friendly)
+        if generation_config is None:
+            generation_config = {
+                "temperature": 0.7,
+                "max_output_tokens": 300,
+            }
+
         response = client.models.generate_content(
             model="models/gemini-2.5-flash",
             contents=full_prompt,
-            config={
-                "temperature": 0.3,
-                "max_output_tokens": 300
-            }
+            config=generation_config,
         )
 
-        if not response or not response.text:
+        # ✅ Collect ALL text safely (no truncation)
+        full_text = ""
+
+        if hasattr(response, "candidates"):
+            for candidate in response.candidates:
+                if hasattr(candidate, "content"):
+                    for part in candidate.content.parts:
+                        if hasattr(part, "text"):
+                            full_text += part.text
+
+        if not full_text.strip():
             return "I’m having trouble generating a response right now."
 
-        return response.text.strip()
+        return full_text.strip()
 
     except Exception as e:
         print("Gemini error:", repr(e))

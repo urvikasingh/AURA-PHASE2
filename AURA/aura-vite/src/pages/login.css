@@ -1,0 +1,71 @@
+.auth-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+}
+
+/* Background glitch layer */
+.glitch-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Login card */
+.auth-card {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  max-width: 380px;
+  padding: 32px 28px;
+
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px);
+
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+
+  color: white;
+}
+
+/* Inputs */
+.auth-card input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+
+  color: white;
+  outline: none;
+}
+
+.auth-card input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Button */
+.auth-card button {
+  width: 100%;
+  padding: 12px;
+
+  background: linear-gradient(135deg, #5227ff, #b19eff);
+  border: none;
+  border-radius: 8px;
+
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}

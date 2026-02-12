@@ -1,20 +1,34 @@
+import pyodbc
 from backend.db.connection import get_connection
 
 
-def create_user(email: str, password_hash: str) -> int:
+def create_user(email: str, password_hash: str):
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute(
-        "INSERT INTO users (email, password_hash) OUTPUT INSERTED.id VALUES (?, ?)",
-        email, password_hash
-    )
+    try:
+        cursor.execute(
+            """
+            INSERT INTO users (email, password_hash)
+            VALUES (?, ?)
+            """,
+            (email, password_hash)
+        )
+        conn.commit()
 
-    user_id = cursor.fetchone()[0]
-    conn.commit()
-    conn.close()
+        cursor.execute(
+            "SELECT id FROM users WHERE email = ?",
+            (email,)
+        )
+        user_id = cursor.fetchone()[0]
+        return user_id
 
-    return user_id
+    except pyodbc.IntegrityError:
+        # ❗ EMAIL ALREADY EXISTS
+        return None
+
+    finally:
+        conn.close()
 
 
 def get_user_by_email(email: str):
@@ -23,10 +37,17 @@ def get_user_by_email(email: str):
 
     cursor.execute(
         "SELECT id, password_hash FROM users WHERE email = ?",
-        email
+        (email,)
     )
-
-    row = cursor.fetchone()
+    user = cursor.fetchone()
     conn.close()
+    return user
 
-    return row
+def get_user_by_id(user_id: int):
+    conn = get_connection()
+    cursor = conn.cursor() # or however you get cursor
+    cursor.execute(
+        "SELECT id, email FROM users WHERE id = ?",
+        (user_id,)
+    )
+    return cursor.fetchone()

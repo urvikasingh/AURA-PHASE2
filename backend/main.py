@@ -1,22 +1,24 @@
 from fastapi import FastAPI
-from backend.api.chat import router as chat_router
-from backend.api import auth
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="AURA PHASE 2")
+from backend.api.auth import router as auth_router
+from backend.api.chat import router as chat_router   # 👈 ADD THIS
 
-# Auth routes
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app = FastAPI()
 
-# Chat routes
-app.include_router(chat_router, tags=["Chat"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ✅ REGISTER ROUTERS
+app.include_router(auth_router)
+app.include_router(chat_router)   # 👈 ADD THIS
+
 
 @app.get("/")
 def root():
-    return {"message": "LLM Platform API is live"}
-
-@app.get("/health", tags=["System"])
-def health_check():
-    return {
-        "status": "ok",
-        "message": "Backend is running"
-    }
+    return {"status": "AURA backend running"}

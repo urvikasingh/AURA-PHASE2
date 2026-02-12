@@ -50,3 +50,20 @@ htmlcov/
 # =========================
 *.key
 *.pem
+
+# =========================
+# Node / Vite
+# =========================
+node_modules/
+dist/
+.vite/
+
+# =========================
+# Local databases
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# Forked README (temporary)
+AURA/README.md

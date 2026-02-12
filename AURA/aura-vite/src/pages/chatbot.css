@@ -1,0 +1,161 @@
+/* =========================
+   PAGE LAYERS
+========================= */
+
+.chatbot-page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: black;
+}
+
+.chat-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* =========================
+   CHAT SHELL (CENTERING)
+========================= */
+
+.chat-shell {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 16px 40px;
+}
+
+/* =========================
+   CHAT CONTAINER (GLASS)
+========================= */
+
+.chat-container {
+  width: 100%;
+  max-width: 720px;
+  height: 75vh;
+
+  display: flex;
+  flex-direction: column;
+
+  background: rgba(12, 12, 18, 0.6);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  box-shadow:
+    0 40px 100px rgba(0, 0, 0, 0.75),
+    0 0 80px rgba(140, 120, 255, 0.12);
+
+  overflow: hidden;
+}
+
+/* =========================
+   MESSAGES AREA (MATTE)
+========================= */
+
+.messages {
+  flex: 1;
+  padding: 28px 24px;
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(12, 12, 18, 0.88),
+    rgba(12, 12, 18, 0.95)
+  );
+}
+
+/* =========================
+   MESSAGE BUBBLES
+========================= */
+
+.message {
+  font-size: 15px;
+  line-height: 1.55;
+  max-width: 80%;
+}
+
+/* BOT */
+.message.bot {
+  align-self: flex-start;
+  padding: 14px 18px;
+
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+
+  border-radius: 16px;
+}
+
+/* USER */
+.message.user {
+  align-self: flex-end;
+  padding: 14px 18px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(130, 110, 255, 0.9),
+    rgba(190, 130, 255, 0.9)
+  );
+  color: white;
+
+  border-radius: 16px;
+}
+
+/* =========================
+   INPUT BAR
+========================= */
+
+.chat-input-bar {
+  display: flex;
+  gap: 12px;
+  padding: 18px;
+
+  background: rgba(10, 10, 16, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-input-bar input {
+  flex: 1;
+  padding: 14px 18px;
+
+  border-radius: 14px;
+  border: none;
+  outline: none;
+
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+  font-size: 15px;
+}
+
+.chat-input-bar input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.chat-input-bar button {
+  padding: 14px 22px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+
+  background: linear-gradient(135deg, #7a6cff, #c48bff);
+  color: white;
+  font-weight: 600;
+
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chat-input-bar button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(160, 140, 255, 0.45);
+}

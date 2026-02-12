@@ -50,3 +50,17 @@ CREATE TABLE conversation_context (
 
 ALTER TABLE users
 ADD password_hash VARCHAR(255);
+
+
+/* =========================
+   ACADEMIC DOMAIN MEMORY
+   ========================= */
+CREATE TABLE academic_memory (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+
+    explanation_style VARCHAR(50) NOT NULL DEFAULT 'step_by_step',
+    difficulty_level VARCHAR(50) NOT NULL DEFAULT 'beginner',
+
+    created_at DATETIME DEFAULT GETDATE()
+);

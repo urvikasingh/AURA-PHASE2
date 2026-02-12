@@ -1,0 +1,365 @@
+/* =========================
+   GLOBAL RESET
+========================= */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+/* =========================
+   HERO / LANDING PAGE
+========================= */
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Aurora background (DO NOT CHANGE) */
+.liquid-wrapper,
+.aurora-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.liquid-wrapper canvas,
+.aurora-bg canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: transparent !important;
+}
+
+/* Navbar spacer */
+.navbar-placeholder {
+  height: 60px;
+}
+
+/* =========================
+   LANDING HERO CONTENT
+========================= */
+.hero-content {
+  position: relative;
+  z-index: 5;
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+  padding: 0 24px;
+  color: white;
+}
+
+.hero-title {
+  font-size: clamp(42px, 6vw, 72px);
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 18px;
+}
+
+.hero-title span {
+  background: linear-gradient(
+    90deg,
+    rgb(181, 164, 255),
+    #ff9fd0,
+    #ffc8a2
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  max-width: 720px;
+  font-size: 18px;
+  line-height: 1.6;
+  opacity: 0.85;
+  margin-bottom: 36px;
+}
+
+.start-btn {
+  padding: 14px 36px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  color: white;
+
+  background: linear-gradient(
+    135deg,
+    rgb(120, 100, 255),
+    rgb(255, 140, 210)
+  );
+
+  box-shadow:
+    0 12px 30px rgba(120, 100, 255, 0.45),
+    0 0 30px rgba(255, 140, 210, 0.35);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.start-btn:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 18px 50px rgba(120, 100, 255, 0.6),
+    0 0 45px rgba(255, 140, 210, 0.45);
+}
+
+/* =========================
+   HOMEPAGE (DOMAIN DASHBOARD)
+========================= */
+.homepage {
+  position: relative;
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 1;
+}
+
+.homepage-content {
+  position: relative;
+  z-index: 5;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.homepage-title {
+  font-size: 52px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  text-align: center;
+  color: rgb(181, 164, 255);
+  font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+}
+
+/* =========================
+   GRID
+========================= */
+.box-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  justify-items: center;
+  margin-top: 40px;
+  overflow: visible;
+}
+
+/* ===============================
+   DOMAIN CARDS
+=============================== */
+.page-box {
+  width: 330px;
+  min-height: 165px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+
+  background: linear-gradient(
+    135deg,
+    rgba(160, 140, 255, 0.22),
+    rgba(255, 180, 220, 0.22),
+    rgba(255, 120, 120, 0.22)
+  );
+  background-size: 200% 200%;
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s ease,
+    background-position 1.2s ease;
+
+  opacity: 0;
+  transform: translateY(20px);
+  animation: aura-rise 0.6s ease forwards;
+}
+
+.page-box:hover {
+  transform: translateY(-10px);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 32px rgba(160, 140, 255, 0.35);
+  background-position: 100% 0%;
+}
+
+.page-box h3 {
+  margin-bottom: 6px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+
+.page-box p {
+  margin: 0;
+  font-size: 15px;
+  opacity: 0.8;
+  color: #ededed;
+  text-align: center;
+}
+
+.page-box:nth-child(1) { animation-delay: 0.08s; }
+.page-box:nth-child(2) { animation-delay: 0.16s; }
+.page-box:nth-child(3) { animation-delay: 0.24s; }
+
+@keyframes aura-rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 900px) {
+  .box-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .box-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-box {
+    width: 92%;
+  }
+}
+
+/* =========================
+   NAVBAR
+========================= */
+.navbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 60px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+}
+
+.navbar-left {
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nav-btn,
+.account-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.account-wrapper {
+  position: relative;
+}
+
+.account-dropdown {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  background: rgba(20, 20, 30, 0.95);
+  border-radius: 10px;
+  padding: 10px;
+  min-width: 160px;
+}
+
+.account-dropdown button {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* ===============================
+   FOCUS DIM EFFECT (RESTORED)
+=============================== */
+
+/* Dim all cards when grid is hovered */
+.box-grid:hover .page-box {
+  opacity: 0.35;
+  filter: blur(1px);
+  transform: scale(0.98);
+  transition:
+    opacity 0.4s ease,
+    filter 0.4s ease,
+    transform 0.4s ease;
+}
+
+/* Bring hovered card into focus */
+.box-grid:hover .page-box:hover {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(-12px) scale(1.06);
+  z-index: 10;
+
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(180, 160, 255, 0.55);
+}
+
+/* =========================
+   HOMEPAGE – PROFESSIONAL POLISH
+========================= */
+
+/* Subtle professional background */
+.homepage-bg {
+  background:
+    radial-gradient(
+      circle at top,
+      rgba(120, 100, 255, 0.08),
+      rgba(0, 0, 0, 0.75) 60%
+    );
+}
+
+/* Center everything vertically */
+.homepage-center {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Subtitle under welcome */
+.homepage-subtitle {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 40px;
+  font-size: 18px;
+  line-height: 1.6;
+  opacity: 0.8;
+}
+
+/* Center grid */
+.box-grid-center {
+  justify-content: center;
+}
+
+/* Highlight username subtly */
+.homepage-title span {
+  color: #ffb6ff;
+}
