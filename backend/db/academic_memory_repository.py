@@ -1,4 +1,5 @@
 from backend.db.connection import get_connection
+import os
 
 
 def get_academic_memory(user_id: int):
@@ -7,6 +8,9 @@ def get_academic_memory(user_id: int):
     Returns a dict or None.
     """
     conn = get_connection()
+    if conn is None:
+        return None
+
     cursor = conn.cursor()
 
     cursor.execute(
@@ -36,6 +40,9 @@ def create_default_academic_memory(user_id: int):
     Defaults are handled by the DB.
     """
     conn = get_connection()
+    if conn is None:
+        return
+
     cursor = conn.cursor()
 
     cursor.execute(
@@ -52,15 +59,21 @@ def create_default_academic_memory(user_id: int):
 
 def get_or_create_academic_memory(user_id: int):
     """
-    Ensure academic memory exists for the user.
+    Get academic memory or create defaults if missing.
+    In TEST_MODE, returns in-memory defaults (no DB access).
     """
+    if os.getenv("TEST_MODE") == "true":
+        return {
+            "explanation_style": "default",
+            "difficulty_level": "medium",
+        }
+
     memory = get_academic_memory(user_id)
+    if memory:
+        return memory
 
-    if memory is None:
-        create_default_academic_memory(user_id)
-        memory = get_academic_memory(user_id)
-
-    return memory
+    create_default_academic_memory(user_id)
+    return get_academic_memory(user_id)
 
 
 def update_academic_memory(
@@ -75,6 +88,9 @@ def update_academic_memory(
         return
 
     conn = get_connection()
+    if conn is None:
+        return
+
     cursor = conn.cursor()
 
     if explanation_style:
@@ -84,7 +100,7 @@ def update_academic_memory(
             SET explanation_style = ?
             WHERE user_id = ?
             """,
-            (explanation_style, user_id)
+            (explanation_style, user_id),
         )
 
     if difficulty_level:
@@ -94,7 +110,7 @@ def update_academic_memory(
             SET difficulty_level = ?
             WHERE user_id = ?
             """,
-            (difficulty_level, user_id)
+            (difficulty_level, user_id),
         )
 
     conn.commit()

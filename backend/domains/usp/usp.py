@@ -17,13 +17,8 @@ def should_save_memory(
     message: str,
     existing_preferences: dict
 ) -> bool:
-    """
-    Decide whether a memory should be saved.
-    """
-
     message_lower = message.lower()
 
-    # Rule 1: explicit user intent
     explicit_triggers = [
         "remember this",
         "remember that",
@@ -33,56 +28,45 @@ def should_save_memory(
     if any(trigger in message_lower for trigger in explicit_triggers):
         return True
 
-    # Rule 2: repeated preference
-    if key in existing_preferences:
-        if existing_preferences[key] == value:
-            return True
+    if key in existing_preferences and existing_preferences[key] == value:
+        return True
 
-    # Rule 3: allowed stable preference types
     allowed_keys = {
         "response_length",
         "explanation_style",
         "tone",
         "language"
     }
-    if key in allowed_keys:
-        return True
-
-    return False
+    return key in allowed_keys
 
 
 def usp_handler(message: str, user_id: int) -> str:
-    msg_lower = message.lower()
-
-    # ✅ TEST_MODE deterministic responses (NO LLM)
-    if os.getenv("TEST_MODE") == "true":
-        if "gravity" in msg_lower:
+    # ✅ TEST_MODE fast-path (optional, harmless)
+    if os.getenv("TEST_MODE", "").lower() == "true":
+        if "gravity" in message.lower():
             return (
                 "Gravity is a natural force that attracts objects with mass "
-                "toward each other, such as objects falling toward Earth."
+                "toward each other."
             )
 
-    # 1️⃣ Detect emotion & intent
     analysis = detect_emotion_and_intent(message)
     mode = analysis["intent"]
 
-    # 2️⃣ Load existing memory FIRST
     preferences = get_user_preferences(user_id)
-
-    # 3️⃣ Extract candidate memory
     extracted = extract_preferences(message)
 
-    # 4️⃣ Apply memory write guard
     for key, value in extracted:
         if should_save_memory(key, value, message, preferences):
             save_user_preference(user_id, key, value)
 
-    # 5️⃣ Build FULL prompt (rules + memory + user message)
     full_prompt = build_personalized_prompt(
         mode=mode,
         preferences=preferences,
         user_message=message
     )
 
-    # 6️⃣ Call LLM
-    return generate_response(full_prompt)
+    # 🔑 DOMAIN IS PASSED HERE
+    return generate_response(
+        full_prompt,
+        domain="usp"
+    )

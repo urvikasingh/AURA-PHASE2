@@ -1,5 +1,10 @@
 import os
 
+# =========================
+# Environment flags
+# =========================
+TEST_MODE = os.getenv("TEST_MODE", "").lower() == "true"
+
 # Optional config import (CI-safe)
 try:
     from backend.config import GEMINI_API_KEY
@@ -9,34 +14,45 @@ except ImportError:
 
 def generate_response(
     full_prompt: str,
+    domain: str | None = None,
     generation_config: dict | None = None
 ) -> str:
     """
-    Shared LLM wrapper.
-    - USP uses default config
-    - Academic / other domains pass their own config
-    - TEST_MODE returns deterministic outputs
+    Central LLM adapter.
+
+    - Domain-aware
+    - TEST_MODE-safe (no external API calls)
+    - Production-safe (Gemini unchanged)
     """
 
-    # 🧪 TEST MODE
-    if os.getenv("TEST_MODE") == "true":
+    # =========================
+    # 🧪 TEST MODE (NO GEMINI)
+    # =========================
+    if TEST_MODE:
+        # 🔑 Academic domain stub
+        if domain == "academic":
+            return (
+                "[ACADEMIC MODE]\n"
+                "Explanation style: step-by-step\n"
+                "Difficulty level: medium\n\n"
+                "Answer:\n"
+                "This is a test-safe academic explanation."
+            )
+
+        # 🔑 USP / general domain stub
         prompt_lower = full_prompt.lower()
 
         if "hello" in prompt_lower or "hi" in prompt_lower:
             return "Hello. How can I help you today?"
-
-        if "ceo" in prompt_lower or "who is my" in prompt_lower:
-            return "I don’t have enough information to answer that."
-
-        if "medicine" in prompt_lower or "chest pain" in prompt_lower:
-            return "I can’t provide medical advice. Please consult a doctor."
 
         if "gravity" in prompt_lower:
             return "Gravity is a force that attracts objects toward each other."
 
         return "I’m here to help."
 
+    # =========================
     # 🚀 REAL MODE (Gemini)
+    # =========================
     try:
         from google import genai
 
@@ -45,7 +61,6 @@ def generate_response(
 
         client = genai.Client(api_key=GEMINI_API_KEY)
 
-        # ✅ Default config (USP-friendly)
         if generation_config is None:
             generation_config = {
                 "temperature": 0.7,
@@ -58,15 +73,11 @@ def generate_response(
             config=generation_config,
         )
 
-        # ✅ Collect ALL text safely (no truncation)
         full_text = ""
-
         if hasattr(response, "candidates"):
             for candidate in response.candidates:
-                if hasattr(candidate, "content"):
-                    for part in candidate.content.parts:
-                        if hasattr(part, "text"):
-                            full_text += part.text
+                for part in getattr(candidate.content, "parts", []):
+                    full_text += getattr(part, "text", "")
 
         if not full_text.strip():
             return "I’m having trouble generating a response right now."

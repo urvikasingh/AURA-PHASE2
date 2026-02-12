@@ -22,8 +22,8 @@ def academic_handler(message: str, user_id: int) -> str:
     # 🔹 Load academic memory
     academic_memory = get_or_create_academic_memory(user_id)
 
-    explanation_style = academic_memory.get("explanation_style", "step_by_step")
-    difficulty_level = academic_memory.get("difficulty_level", "beginner")
+    explanation_style = academic_memory.get("explanation_style", "default")
+    difficulty_level = academic_memory.get("difficulty_level", "medium")
 
     prompt = f"""
 {ACADEMIC_SYSTEM_PROMPT}
@@ -44,7 +44,9 @@ Answer:
         "top_p": 0.9,
     }
 
+    # 🔑 DOMAIN IS PASSED HERE (CRITICAL)
     return generate_response(
         prompt,
-        generation_config=academic_generation_config
+        domain="academic",
+        generation_config=academic_generation_config,
     )
