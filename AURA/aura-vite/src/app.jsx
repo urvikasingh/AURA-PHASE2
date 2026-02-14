@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { apiRequest } from "./services/api";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -8,6 +10,20 @@ import ChatbotPage from "./pages/Chatbot";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
+
+  // ✅ FIX: validate token once on app startup
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    apiRequest("/auth/me").catch(() => {
+      // Token exists but backend rejects it
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    });
+  }, []);
+
   return (
     <Router>
       <Routes>

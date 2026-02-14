@@ -60,3 +60,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "token_type": "bearer"
     }
 
+from fastapi import APIRouter, Depends
+from backend.core.auth_utils import get_current_user
+
+@router.get("/me")
+def get_me(current_user=Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "display_name": getattr(current_user, "display_name", None),
+    }

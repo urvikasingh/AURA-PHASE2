@@ -9,6 +9,9 @@ function HomePage() {
     : "there";
 
   const goToChat = (domain) => {
+    // ✅ CLEAR active conversation for this domain
+    localStorage.removeItem(`aura_active_conversation_${domain}`);
+
     navigate(`/chat?domain=${domain}`);
   };
 
@@ -26,7 +29,10 @@ function HomePage() {
 
         {/* Domain cards */}
         <div className="box-grid box-grid-center">
-          <div className="page-box" onClick={() => goToChat("usp")}>
+          <div
+            className="page-box"
+            onClick={() => goToChat("usp")}
+          >
             <h3>ME-AI</h3>
             <p>
               General-purpose reasoning, exploration,
@@ -34,7 +40,10 @@ function HomePage() {
             </p>
           </div>
 
-          <div className="page-box" onClick={() => goToChat("academic")}>
+          <div
+            className="page-box"
+            onClick={() => goToChat("academic")}
+          >
             <h3>ACADM-AI</h3>
             <p>
               Structured explanations designed for learning,

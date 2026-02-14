@@ -4,7 +4,6 @@ const BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export async function apiRequest(endpoint, options = {}) {
-  // ✅ MUST MATCH LOGIN STORAGE
   const token = localStorage.getItem("token");
 
   const headers = {
@@ -22,6 +21,15 @@ export async function apiRequest(endpoint, options = {}) {
         : options.body,
   });
 
+  // ✅ FIX 1: handle auth desync FIRST
+  if (response.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user"); // if you store it
+    window.location.href = "/login";
+    return;
+  }
+
+  // Existing error handling (keep this)
   if (!response.ok) {
     let errorMessage = "API request failed";
     try {

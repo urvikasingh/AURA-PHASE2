@@ -5,18 +5,43 @@ from backend.core.chat_context_builder import build_chat_context
 
 
 ACADEMIC_SYSTEM_PROMPT = """
-You are an Academic Assistant.
+You are an excellent teacher who explains complex topics clearly and kindly.
 
-You MUST follow this format strictly:
-1. Definition (2–3 sentences)
-2. Detailed explanation (step-by-step, numbered)
-3. Example (with explanation)
+Your goal is to help the student understand without overwhelming them
+and without making them feel inadequate.
 
-Rules:
-- Use formal academic language
-- Avoid emojis, jokes, or casual tone
-- Do not shorten answers
-- Be explicit and structured
+STRICT OUTPUT RULES (must follow exactly):
+
+- NEVER write a long paragraph.
+- Each paragraph must be at most 2 sentences.
+- Leave a blank line between every section.
+- Use simple language first, technical terms later.
+- Stop once the core idea is understood.
+
+REQUIRED STRUCTURE:
+
+Intuition:
+(2 short sentences explaining the idea simply)
+
+Step-by-step:
+1. One short step.
+2. One short step.
+3. One short step.
+
+Example:
+A simple, everyday example in 2 sentences.
+
+Gentle follow-up:
+One optional line inviting the student to continue.
+
+Tone rules:
+- Calm, respectful, and patient.
+- Never condescending.
+- Never say “this is simple” or “obviously”.
+
+Naming:
+- If addressed as “sir”, respond politely.
+- Do not introduce yourself or insist on a name.
 """
 
 
@@ -25,22 +50,34 @@ def academic_handler(
     user_id: int,
     conversation_id: int | None = None,
 ) -> str:
-    # 1️⃣ Load academic memory
+    """
+    Academic domain handler.
+    Polite, professional tutor-style responses.
+    """
+
+    normalized = message.strip().lower()
+
+    # 1️⃣ Polite handling of greetings (NOT USP-style)
+    if normalized in {"hi", "hello", "hey", "hii"}:
+        return "Hello. What academic topic or question would you like help with?"
+
+    # 2️⃣ Load academic preferences (defaults for now)
     academic_memory = get_or_create_academic_memory(user_id)
 
-    explanation_style = academic_memory.get("explanation_style", "step-by-step")
-    difficulty_level = academic_memory.get("difficulty_level", "beginner")
+    explanation_style = academic_memory.get("explanation_style", "default")
+    difficulty_level = academic_memory.get("difficulty_level", "intermediate")
 
-    # 2️⃣ Load last N messages (if conversation exists)
+    # 3️⃣ Load minimal conversation context (avoid token waste)
     history_block = ""
     if conversation_id:
         messages = get_conversation_messages(
             conversation_id=conversation_id,
-            limit=6,
+            limit=2,  # IMPORTANT: keep academic context short
         )
-        history_block = build_chat_context(messages)
+        if messages:
+            history_block = build_chat_context(messages)
 
-    # 3️⃣ Build final prompt
+    # 4️⃣ Build final prompt
     prompt = f"""
 {ACADEMIC_SYSTEM_PROMPT}
 
@@ -48,18 +85,18 @@ Academic preferences:
 - Explanation style: {explanation_style}
 - Difficulty level: {difficulty_level}
 
-Conversation so far:
+Conversation context:
 {history_block}
 
 Question:
 {message}
 
-Answer:
+Provide a clear academic explanation suitable for a learner.
 """
 
     academic_generation_config = {
         "temperature": 0.3,
-        "max_output_tokens": 1024,
+        "max_output_tokens": 700,
     }
 
     return generate_response(

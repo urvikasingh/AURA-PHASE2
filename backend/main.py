@@ -6,6 +6,7 @@ from backend.api.chat import router as chat_router   # 👈 ADD THIS
 from backend.api import conversations
 from backend.api import chat_history
 
+
 app = FastAPI()
 
 app.add_middleware(

@@ -8,8 +8,12 @@ import { apiRequest } from "../services/api";
 export default function ChatbotPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [conversations, setConversations] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
+  const bottomRef = useRef(null);
   const location = useLocation();
+
   const domain =
     new URLSearchParams(location.search).get("domain") || "usp";
 
@@ -20,11 +24,8 @@ export default function ChatbotPage() {
     return saved ? Number(saved) : null;
   });
 
-  const [conversations, setConversations] = useState([]);
-  const bottomRef = useRef(null);
-
   /* =========================
-     SCROLL
+     SCROLL TO BOTTOM
   ========================= */
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,7 +41,7 @@ export default function ChatbotPage() {
   }, [domain]);
 
   /* =========================
-     LOAD SIDEBAR
+     LOAD SIDEBAR CONVERSATIONS
   ========================= */
   useEffect(() => {
     apiRequest(`/conversations?domain=${domain}`)
@@ -56,11 +57,12 @@ export default function ChatbotPage() {
 
     apiRequest(`/chat/history/${conversationId}`)
       .then((msgs) => {
-        const formatted = msgs.map((m) => ({
-          role: m.role === "assistant" ? "bot" : "user",
-          text: m.content,
-        }));
-        setMessages(formatted);
+        setMessages(
+          msgs.map((m) => ({
+            role: m.role === "assistant" ? "bot" : "user",
+            text: m.content,
+          }))
+        );
       })
       .catch(console.error);
   }, [conversationId]);
@@ -69,12 +71,9 @@ export default function ChatbotPage() {
      OPEN EXISTING CHAT
   ========================= */
   const openConversation = async (convId) => {
-    if (!convId) return;
-
     const conv = conversations.find(
       (c) => (c.id ?? c.conversation_id) === convId
     );
-
     if (!conv || conv.domain !== domain) return;
 
     setConversationId(convId);
@@ -96,6 +95,32 @@ export default function ChatbotPage() {
     setConversationId(null);
     setMessages([]);
     localStorage.removeItem(storageKey);
+  };
+
+  /* =========================
+     DELETE CONVERSATION
+     (FIXED — ALWAYS RESET CHAT)
+  ========================= */
+  const handleDeleteConversation = async (convId) => {
+    try {
+      await apiRequest(`/conversations/${convId}`, {
+        method: "DELETE",
+      });
+
+      // Remove from sidebar
+      setConversations((prev) =>
+        prev.filter(
+          (c) => (c.id ?? c.conversation_id) !== convId
+        )
+      );
+
+      // ✅ ALWAYS reset chat (no ID comparison)
+      startNewChat();
+
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error("Failed to delete conversation", err);
+    }
   };
 
   /* =========================
@@ -131,7 +156,10 @@ export default function ChatbotPage() {
 
       if (!conversationId && data.conversation_id) {
         setConversationId(data.conversation_id);
-        localStorage.setItem(storageKey, data.conversation_id);
+        localStorage.setItem(
+          storageKey,
+          data.conversation_id
+        );
 
         apiRequest(`/conversations?domain=${domain}`)
           .then(setConversations)
@@ -141,7 +169,10 @@ export default function ChatbotPage() {
       console.error(err);
       setMessages((prev) => [
         ...prev,
-        { role: "bot", text: "LLM is temporarily unavailable." },
+        {
+          role: "bot",
+          text: "LLM is temporarily unavailable.",
+        },
       ]);
     }
   };
@@ -163,8 +194,12 @@ export default function ChatbotPage() {
       <Navbar />
 
       <div className="chat-shell">
+        {/* SIDEBAR */}
         <div className="chat-sidebar">
-          <button className="new-chat-btn" onClick={startNewChat}>
+          <button
+            className="new-chat-btn"
+            onClick={startNewChat}
+          >
             + New Chat
           </button>
 
@@ -175,19 +210,30 @@ export default function ChatbotPage() {
             return (
               <div
                 key={convId}
-                onClick={() => openConversation(convId)}
                 className={`chat-history-item ${
                   convId === conversationId ? "active" : ""
                 }`}
+                onClick={() => openConversation(convId)}
               >
                 <div className="chat-title">
                   {new Date(c.created_at).toLocaleString()}
                 </div>
+
+                <button
+                  className="delete-conv-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteTarget(convId);
+                  }}
+                >
+                  🗑
+                </button>
               </div>
             );
           })}
         </div>
 
+        {/* CHAT AREA */}
         <div className="chat-container">
           <div className="messages">
             {messages.map((m, i) => (
@@ -205,13 +251,43 @@ export default function ChatbotPage() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              onKeyDown={(e) =>
+                e.key === "Enter" && sendMessage()
+              }
               placeholder="Type your message…"
             />
-            <button onClick={sendMessage}>Send</button>
+            <button onClick={sendMessage}>
+              Send
+            </button>
           </div>
         </div>
       </div>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteTarget && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h3>Delete this conversation?</h3>
+            <p>This action can’t be undone.</p>
+
+            <div className="modal-actions">
+              <button
+                onClick={() => setDeleteTarget(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="danger"
+                onClick={() =>
+                  handleDeleteConversation(deleteTarget)
+                }
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,25 @@ from backend.db.chat_repository import (
     has_conversation_greeted,
     mark_conversation_greeted,
 )
+import os
+
+TEST_MODE = os.getenv("TEST_MODE") == "true"
+
+
+def is_greeting_or_vague(message: str) -> bool:
+    if not message:
+        return True
+
+    text = message.strip().lower()
+    greetings = {"hi", "hello", "hey", "hii"}
+
+    if text in greetings:
+        return True
+
+    if len(text.split()) <= 2:
+        return True
+
+    return False
 
 
 def usp_handler(
@@ -39,14 +58,19 @@ def usp_handler(
 
     greeting_instruction = ""
 
-    if conversation_id is not None and not has_conversation_greeted(conversation_id):
+    if (
+            conversation_id is not None
+            and not has_conversation_greeted(conversation_id)
+            and is_greeting_or_vague(message)
+            and not TEST_MODE
+    ):
         display_name = get_display_name(user_id)
         if display_name:
             greeting_instruction = f"""
-Start your response by greeting the user by name ONCE.
-The user's name is {display_name}.
-Do NOT repeat the name again later.
-"""
+    Start your response by greeting the user by name ONCE.
+    The user's name is {display_name}.
+    Do NOT repeat the name again later.
+    """
             mark_conversation_greeted(conversation_id)
 
     personality_spine = """You are USP — a calm, thoughtful, and friendly digital companion.
@@ -79,6 +103,13 @@ BOUNDARIES:
   Example:
   “That’s not something I can get into, but if you want to talk about what brought it up,
   I’m here.”
+  
+CLARIFICATION:
+- You may explain sensitive or political topics at a high level in a neutral,
+  factual, and non-judgmental way.
+- Do not take sides, assign blame, or advocate actions.
+- If the user asks for opinions, justification of harm, or incitement,
+  redirect calmly.
 
 IDENTITY & NAME HANDLING:
 - If the user states or restates their name, do NOT acknowledge or comment on it.
@@ -119,7 +150,7 @@ Respond naturally, clearly,with presence and complete your thoughts.
 
     usp_generation_config = {
         "temperature": 0.7,
-        "max_output_tokens": 512,
+        "max_output_tokens": 1024,
     }
     return generate_response(
         full_prompt,

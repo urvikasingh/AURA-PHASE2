@@ -218,3 +218,46 @@ def get_conversation_messages(
         }
         for row in rows
     ]
+
+def delete_conversation(conversation_id: int, user_id: int):
+    """
+    Delete a conversation and all its messages.
+    Ensures the conversation belongs to the user.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Safety check: ownership
+    cursor.execute(
+        """
+        SELECT 1
+        FROM conversations
+        WHERE id = ? AND user_id = ?
+        """,
+        (conversation_id, user_id)
+    )
+
+    if cursor.fetchone() is None:
+        conn.close()
+        raise PermissionError("Conversation does not belong to user")
+
+    # Delete messages first (FK-safe)
+    cursor.execute(
+        """
+        DELETE FROM chat_messages
+        WHERE conversation_id = ?
+        """,
+        (conversation_id,)
+    )
+
+    # Delete conversation
+    cursor.execute(
+        """
+        DELETE FROM conversations
+        WHERE id = ?
+        """,
+        (conversation_id,)
+    )
+
+    conn.commit()
+    conn.close()
