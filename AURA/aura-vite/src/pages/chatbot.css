@@ -1,13 +1,26 @@
 /* =========================
-   PAGE LAYERS
+   ROOT & PAGE
 ========================= */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
 
 .chatbot-page {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: black;
 }
+
+/* =========================
+   BACKGROUND
+========================= */
 
 .chat-bg {
   position: fixed;
@@ -17,17 +30,67 @@
 }
 
 /* =========================
-   CHAT SHELL (CENTERING)
+   CHAT SHELL (LAYOUT ROOT)
 ========================= */
 
 .chat-shell {
   position: relative;
   z-index: 2;
-  min-height: 100vh;
+
+  flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 16px 40px;
+  height: 100%;
+  overflow: hidden;
+
+  padding-top: 80px; /* space for navbar */
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.chat-sidebar {
+  width: 260px;
+  padding: 12px;
+  overflow-y: auto;
+
+  background: rgba(0, 0, 0, 0.45);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.new-chat-btn {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 8px;
+
+  background: #7c5cff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.chat-history-item {
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.chat-history-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-history-item.active {
+  background: rgba(124, 92, 255, 0.3);
+}
+
+.chat-title {
+  font-size: 12px;
+  opacity: 0.85;
 }
 
 /* =========================
@@ -35,12 +98,12 @@
 ========================= */
 
 .chat-container {
-  width: 100%;
-  max-width: 720px;
-  height: 75vh;
-
+  flex: 1;
   display: flex;
   flex-direction: column;
+
+  margin: 16px;
+  height: calc(100% - 32px);
 
   background: rgba(12, 12, 18, 0.6);
   backdrop-filter: blur(22px);
@@ -57,7 +120,7 @@
 }
 
 /* =========================
-   MESSAGES AREA (MATTE)
+   MESSAGES
 ========================= */
 
 .messages {
@@ -74,6 +137,9 @@
     rgba(12, 12, 18, 0.88),
     rgba(12, 12, 18, 0.95)
   );
+
+  /* 🔒 Cursor behavior (ChatGPT-like) */
+  cursor: default;
 }
 
 /* =========================
@@ -84,6 +150,10 @@
   font-size: 15px;
   line-height: 1.55;
   max-width: 80%;
+
+  /* Passive messages */
+  pointer-events: none;
+  cursor: default;
 }
 
 /* BOT */

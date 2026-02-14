@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { login } from "../services/auth.service";
 import "./Login.css";
 import { jwtDecode } from "jwt-decode";
@@ -12,6 +12,12 @@ function Login() {
 
   const navigate = useNavigate();
 
+  // 🔒 If already logged in, redirect away from login
+  const token = localStorage.getItem("token");
+  if (token) {
+    return <Navigate to="/homepage" replace />;
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -20,17 +26,17 @@ function Login() {
     try {
       const data = await login(email, password);
 
-      // ✅ SAVE TOKEN (CONSISTENT KEY)
+      // ✅ Save JWT token (single source of truth)
       localStorage.setItem("token", data.access_token);
 
-      // ✅ DECODE TOKEN
-      const decoded = jwtDecode(data.access_token);
+      // (Optional) decode token if you need info later
+      jwtDecode(data.access_token);
 
-      // ✅ SAVE USER EMAIL
+      // (Optional) store email for UI convenience
       localStorage.setItem("user", email);
 
-      // ✅ REDIRECT TO CHAT
-      navigate("/homepage");
+      // ✅ Redirect and remove /login from history
+      navigate("/homepage", { replace: true });
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
     } finally {

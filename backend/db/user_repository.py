@@ -12,19 +12,18 @@ def create_user(email: str, password_hash: str):
             INSERT INTO users (email, password_hash)
             VALUES (?, ?)
             """,
-            (email, password_hash)
+            (email, password_hash),
         )
         conn.commit()
 
         cursor.execute(
             "SELECT id FROM users WHERE email = ?",
-            (email,)
+            (email,),
         )
         user_id = cursor.fetchone()[0]
         return user_id
 
     except pyodbc.IntegrityError:
-        # ❗ EMAIL ALREADY EXISTS
         return None
 
     finally:
@@ -37,17 +36,21 @@ def get_user_by_email(email: str):
 
     cursor.execute(
         "SELECT id, password_hash FROM users WHERE email = ?",
-        (email,)
+        (email,),
     )
     user = cursor.fetchone()
     conn.close()
     return user
 
+
 def get_user_by_id(user_id: int):
     conn = get_connection()
-    cursor = conn.cursor() # or however you get cursor
+    cursor = conn.cursor()
+
     cursor.execute(
         "SELECT id, email FROM users WHERE id = ?",
-        (user_id,)
+        (user_id,),
     )
-    return cursor.fetchone()
+    user = cursor.fetchone()
+    conn.close()
+    return user

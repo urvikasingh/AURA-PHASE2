@@ -1,5 +1,7 @@
 from backend.core.llm_client import generate_response
 from backend.db.academic_memory_repository import get_or_create_academic_memory
+from backend.db.chat_repository import get_conversation_messages
+from backend.core.chat_context_builder import build_chat_context
 
 
 ACADEMIC_SYSTEM_PROMPT = """
@@ -18,19 +20,36 @@ Rules:
 """
 
 
-def academic_handler(message: str, user_id: int) -> str:
-    # 🔹 Load academic memory
+def academic_handler(
+    message: str,
+    user_id: int,
+    conversation_id: int | None = None,
+) -> str:
+    # 1️⃣ Load academic memory
     academic_memory = get_or_create_academic_memory(user_id)
 
-    explanation_style = academic_memory.get("explanation_style", "default")
-    difficulty_level = academic_memory.get("difficulty_level", "medium")
+    explanation_style = academic_memory.get("explanation_style", "step-by-step")
+    difficulty_level = academic_memory.get("difficulty_level", "beginner")
 
+    # 2️⃣ Load last N messages (if conversation exists)
+    history_block = ""
+    if conversation_id:
+        messages = get_conversation_messages(
+            conversation_id=conversation_id,
+            limit=6,
+        )
+        history_block = build_chat_context(messages)
+
+    # 3️⃣ Build final prompt
     prompt = f"""
 {ACADEMIC_SYSTEM_PROMPT}
 
 Academic preferences:
 - Explanation style: {explanation_style}
 - Difficulty level: {difficulty_level}
+
+Conversation so far:
+{history_block}
 
 Question:
 {message}
@@ -41,12 +60,9 @@ Answer:
     academic_generation_config = {
         "temperature": 0.3,
         "max_output_tokens": 1024,
-        "top_p": 0.9,
     }
 
-    # 🔑 DOMAIN IS PASSED HERE (CRITICAL)
     return generate_response(
         prompt,
-        domain="academic",
         generation_config=academic_generation_config,
     )

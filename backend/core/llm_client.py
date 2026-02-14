@@ -22,14 +22,14 @@ def generate_response(
 
     - Domain-aware
     - TEST_MODE-safe (no external API calls)
-    - Production-safe (Gemini unchanged)
+    - Production-safe (Gemini hardened)
     """
 
     # =========================
     # 🧪 TEST MODE (NO GEMINI)
     # =========================
     if TEST_MODE:
-        # 🔑 Academic domain stub
+        # Academic domain stub
         if domain == "academic":
             return (
                 "[ACADEMIC MODE]\n"
@@ -39,7 +39,7 @@ def generate_response(
                 "This is a test-safe academic explanation."
             )
 
-        # 🔑 USP / general domain stub
+        # USP / general domain stub
         prompt_lower = full_prompt.lower()
 
         if "hello" in prompt_lower or "hi" in prompt_lower:
@@ -61,6 +61,7 @@ def generate_response(
 
         client = genai.Client(api_key=GEMINI_API_KEY)
 
+        # ✅ Default generation config (safe + complete replies)
         if generation_config is None:
             generation_config = {
                 "temperature": 0.7,
@@ -73,12 +74,26 @@ def generate_response(
             config=generation_config,
         )
 
+        # =========================
+        # 🛡️ SAFE RESPONSE PARSING
+        # =========================
         full_text = ""
-        if hasattr(response, "candidates"):
-            for candidate in response.candidates:
-                for part in getattr(candidate.content, "parts", []):
-                    full_text += getattr(part, "text", "")
 
+        candidates = getattr(response, "candidates", None)
+
+        if candidates:
+            for candidate in candidates:
+                content = getattr(candidate, "content", None)
+                parts = getattr(content, "parts", []) if content else []
+
+                for part in parts:
+                    text = getattr(part, "text", "")
+                    if text:
+                        full_text += text
+
+        # =========================
+        # 🧯 FALLBACK
+        # =========================
         if not full_text.strip():
             return "I’m having trouble generating a response right now."
 

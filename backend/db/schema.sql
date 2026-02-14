@@ -1,19 +1,47 @@
---CREATE DATABASE
+/* =====================================================
+   DROP DATABASE (SAFE RECREATE)
+   ===================================================== */
+USE master;
+GO
 
+IF EXISTS (SELECT 1 FROM sys.databases WHERE name = 'AURA_PHASE2')
+BEGIN
+    ALTER DATABASE AURA_PHASE2
+    SET SINGLE_USER
+    WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE AURA_PHASE2;
+END
+GO
+
+/* =====================================================
+   CREATE DATABASE
+   ===================================================== */
 CREATE DATABASE AURA_PHASE2;
+GO
 
 USE AURA_PHASE2;
+GO
 
-
---CREATE user TABLE
-
+/* =====================================================
+   USERS
+   ===================================================== */
 CREATE TABLE users (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    email VARCHAR(255) UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255),
+
+
     created_at DATETIME DEFAULT GETDATE()
 );
+GO
 
---CREATE user_preferences (LONG-TERM MEMORY)
+
+/* =====================================================
+   USER PREFERENCES (LONG-TERM MEMORY)
+   ===================================================== */
+-- user_preferences
+-- Used for USP long-term human memory:
+-- e.g. display_name, tone, relationship preferences
 
 CREATE TABLE user_preferences (
     id INT IDENTITY(1,1) PRIMARY KEY,
@@ -21,40 +49,45 @@ CREATE TABLE user_preferences (
     preference_key VARCHAR(100),
     preference_value VARCHAR(500),
     updated_at DATETIME DEFAULT GETDATE(),
+
     CONSTRAINT fk_user_preferences
         FOREIGN KEY (user_id) REFERENCES users(id)
 );
+GO
 
---CREATE user_behavior_profile
+CREATE INDEX idx_user_preferences_user
+ON user_preferences (user_id);
+GO
 
+/* =====================================================
+   USER BEHAVIOR PROFILE (FUTURE USE)
+   ===================================================== */
 CREATE TABLE user_behavior_profile (
     user_id INT PRIMARY KEY,
     behavior_summary VARCHAR(MAX),
     updated_at DATETIME DEFAULT GETDATE(),
+
     CONSTRAINT fk_behavior_user
         FOREIGN KEY (user_id) REFERENCES users(id)
 );
+GO
 
---CREATE conversation_context
-
+/* =====================================================
+   CONVERSATION CONTEXT (SUMMARY MEMORY)
+   ===================================================== */
 CREATE TABLE conversation_context (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT PRIMARY KEY,
     context_summary VARCHAR(MAX),
     updated_at DATETIME DEFAULT GETDATE(),
+
     CONSTRAINT fk_context_user
         FOREIGN KEY (user_id) REFERENCES users(id)
 );
+GO
 
---adding column password in table users
-
-ALTER TABLE users
-ADD password_hash VARCHAR(255);
-
-
-
- --ACADEMIC DOMAIN MEMORY
-
+/* =====================================================
+   ACADEMIC DOMAIN MEMORY
+   ===================================================== */
 CREATE TABLE academic_memory (
     id INT IDENTITY(1,1) PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
@@ -62,5 +95,53 @@ CREATE TABLE academic_memory (
     explanation_style VARCHAR(50) NOT NULL DEFAULT 'step_by_step',
     difficulty_level VARCHAR(50) NOT NULL DEFAULT 'beginner',
 
-    created_at DATETIME DEFAULT GETDATE()
+    created_at DATETIME DEFAULT GETDATE(),
+
+    CONSTRAINT fk_academic_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
 );
+GO
+
+/* =====================================================
+   CONVERSATIONS (CHAT SESSIONS)
+   ===================================================== */
+CREATE TABLE conversations (
+    id INT IDENTITY PRIMARY KEY,
+    user_id INT NOT NULL,
+    domain VARCHAR(50) NOT NULL,
+    has_greeted BIT DEFAULT 0,
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE()
+);
+
+GO
+
+CREATE INDEX idx_conversations_user_updated
+ON conversations (user_id, updated_at DESC);
+GO
+
+/* =====================================================
+   CHAT MESSAGES (CHAT HISTORY)
+   ===================================================== */
+CREATE TABLE chat_messages (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+
+    conversation_id INT NOT NULL,
+    user_id INT NOT NULL,
+
+    role VARCHAR(20) NOT NULL,        -- 'user' | 'assistant'
+    content VARCHAR(MAX) NOT NULL,
+
+    created_at DATETIME DEFAULT GETDATE(),
+
+    CONSTRAINT fk_message_conversation
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+
+    CONSTRAINT fk_message_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+);
+GO
+
+CREATE INDEX idx_chat_messages_conversation
+ON chat_messages (conversation_id, created_at);
+GO

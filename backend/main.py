@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.auth import router as auth_router
 from backend.api.chat import router as chat_router   # 👈 ADD THIS
+from backend.api import conversations
+from backend.api import chat_history
 
 app = FastAPI()
 
@@ -17,6 +19,8 @@ app.add_middleware(
 # ✅ REGISTER ROUTERS
 app.include_router(auth_router)
 app.include_router(chat_router)   # 👈 ADD THIS
+app.include_router(conversations.router)
+app.include_router(chat_history.router)
 
 
 @app.get("/")
