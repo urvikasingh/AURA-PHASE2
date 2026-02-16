@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pyodbc import IntegrityError
 from backend.core.auth_utils import get_current_user
 from backend.db.chat_repository import (
     get_user_conversations,
@@ -40,8 +41,16 @@ def delete_conversation_endpoint(
             user_id=current_user.id,
         )
         return {"status": "deleted"}
+
     except PermissionError:
         raise HTTPException(
             status_code=403,
             detail="Conversation does not belong to user",
         )
+
+    except IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail="Conversation is linked to experimental logs and cannot be deleted.",
+        )
+

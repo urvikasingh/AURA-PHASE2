@@ -145,3 +145,47 @@ GO
 CREATE INDEX idx_chat_messages_conversation
 ON chat_messages (conversation_id, created_at);
 GO
+
+/* =====================================================
+   EXPERIMENT LOGS (RESEARCH INSTRUMENTATION)
+   -----------------------------------------------------
+   This table is used ONLY for empirical evaluation
+   and does NOT affect application behavior.
+   ===================================================== */
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.tables
+    WHERE name = 'experiment_logs'
+)
+BEGIN
+    CREATE TABLE experiment_logs (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+
+        user_id INT NOT NULL,
+        conversation_id INT NOT NULL,
+
+        domain VARCHAR(50) NOT NULL,
+
+        memory_triggered BIT DEFAULT 0,
+
+        latency_ms FLOAT NOT NULL,
+
+        input_length INT,
+        output_length INT,
+
+        created_at DATETIME DEFAULT GETDATE(),
+
+        CONSTRAINT fk_experiment_user
+            FOREIGN KEY (user_id)
+            REFERENCES users(id),
+
+        CONSTRAINT fk_experiment_conversation
+            FOREIGN KEY (conversation_id)
+            REFERENCES conversations(id)
+    );
+
+    CREATE INDEX idx_experiment_domain
+        ON experiment_logs (domain);
+END;
+GO
