@@ -1,0 +1,84 @@
+--- mermaid code
+
+
+---
+config:
+  look: classic
+  theme: neo
+---
+flowchart TB
+
+    %% FRONTEND
+    UI["Frontend UI (React)"]:::frontend
+
+    %% BACKEND
+    API["API & Auth Layer"]:::backend
+    Router["Domain Router"]:::backend
+
+    %% DOMAIN HANDLERS
+    USP["USP Handler"]:::domain
+    ACAD["Academic Handler"]:::domain
+
+    %% LLM INVOCATION
+    subgraph INVOKE["LLM Invocation Layer"]
+        MG["Memory Gate (USP only)"]:::memory
+        LLM["LLM Client"]:::llm
+    end
+
+    EXT["LLM Provider API"]:::external
+
+    %% PERSISTENCE INTERFACE
+    PLI["Persistence & Logging Interface"]:::data
+
+    %% DATA LAYER
+    subgraph DATA["Data Layer"]
+        LOG["Experiment Logger"]:::logger
+        DBS["Database Service"]:::data
+    end
+
+    %% DATABASE
+    subgraph DB["Database"]
+        UDATA["Users<br/>user_preferences"]
+        CDATA["Conversations<br/>chat_messages"]
+        ELOGS["experiment_logs"]
+        RMEM["Reserved Memory Tables<br/>user_behavior_profile<br/>conversation_context<br/>academic_memory"]
+    end
+
+    %% PRIMARY FLOW
+    UI --> API
+    API --> Router
+    Router --> USP
+    Router --> ACAD
+
+    %% DOMAIN TO LLM
+    USP --> MG
+    MG --> LLM
+    ACAD --> LLM
+
+    %% LLM PROVIDER
+    LLM --> EXT
+    EXT --> LLM
+
+    %% RESPONSE
+    LLM --> API
+    API --> UI
+
+    %% PERSISTENCE SIMPLIFICATION
+    USP --> PLI
+    ACAD --> PLI
+    MG --> PLI
+    LOG --> PLI
+
+    PLI --> DBS
+    DBS --> DB
+    LOG -.-> ELOGS
+
+    %% STYLES
+    classDef frontend fill:#fdf6ec,stroke:#333,stroke-width:1px
+    classDef backend fill:#eef3fb,stroke:#333,stroke-width:1px
+    classDef domain fill:#e8f6ef,stroke:#333,stroke-width:1px
+    classDef memory fill:#f5e8ff,stroke:#333,stroke-width:1px
+    classDef llm fill:#f5e8ff,stroke:#333,stroke-width:1px
+    classDef external fill:#ffffff,stroke:#333,stroke-width:1px
+    classDef data fill:#fff4e6,stroke:#333,stroke-width:1px
+    classDef logger fill:#fff4e6,stroke:#333,stroke-width:1px

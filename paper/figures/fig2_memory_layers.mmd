@@ -1,0 +1,50 @@
+---
+config:
+  look: classic
+  theme: neo
+---
+flowchart TB
+
+    %% =========================
+    %% TOP ROW: MEMORY LAYERS
+    %% =========================
+
+    subgraph LAYERS["Memory Layers"]
+        direction LR
+
+        SC["Session Context<br/>• Prompt window<br/>• Ephemeral<br/>• Not persisted<br/>• Not logged"]:::session
+
+        ID["Identity Memory<br/>• Low-risk data<br/>• display_name<br/>• Greeting only"]:::identity
+
+        subgraph BM_LAYER["Behavioral Memory (Memory Gate Controlled)"]
+            BM["User Behavior Profile<br/>• Preferences<br/>• Style signals<br/><br/>Logged via memory_triggered flag"]:::behavioral
+            MG["Memory Gate v1.2<br/>• Domain-scoped (USP)<br/>• Explicit control"]:::gate
+        end
+    end
+
+    %% =========================
+    %% BOTTOM ROW: STORAGE
+    %% =========================
+
+    subgraph DB["Persistent Storage"]
+        UP["user_preferences"]:::storage
+        UBP["user_behavior_profile"]:::storage
+    end
+
+    %% =========================
+    %% STORAGE LINKS
+    %% =========================
+
+    ID --> UP
+    BM --> MG
+    MG --> UBP
+
+    %% =========================
+    %% STYLES
+    %% =========================
+
+    classDef session fill:#fdf6ec,stroke:#333,stroke-width:1px
+    classDef identity fill:#eef3fb,stroke:#333,stroke-width:1px
+    classDef behavioral fill:#e8f6ef,stroke:#333,stroke-width:1px
+    classDef gate fill:#f5e8ff,stroke:#333,stroke-width:1px
+    classDef storage fill:#fff4e6,stroke:#333,stroke-width:1px
