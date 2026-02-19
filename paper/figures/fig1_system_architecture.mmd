@@ -5,75 +5,49 @@
 config:
   look: classic
   theme: neo
+  layout: fixed
 ---
-flowchart TB
-
-    %% FRONTEND
-    UI["Frontend UI (React)"]:::frontend
-
-    %% BACKEND
-    API["API & Auth Layer"]:::backend
-    Router["Domain Router"]:::backend
-
-    %% DOMAIN HANDLERS
-    USP["USP Handler"]:::domain
-    ACAD["Academic Handler"]:::domain
-
-    %% LLM INVOCATION
-    subgraph INVOKE["LLM Invocation Layer"]
-        MG["Memory Gate (USP only)"]:::memory
-        LLM["LLM Client"]:::llm
-    end
-
-    EXT["LLM Provider API"]:::external
-
-    %% PERSISTENCE INTERFACE
-    PLI["Persistence & Logging Interface"]:::data
-
-    %% DATA LAYER
-    subgraph DATA["Data Layer"]
-        LOG["Experiment Logger"]:::logger
-        DBS["Database Service"]:::data
-    end
-
-    %% DATABASE
-    subgraph DB["Database"]
-        UDATA["Users<br/>user_preferences"]
-        CDATA["Conversations<br/>chat_messages"]
+flowchart RL
+ subgraph INVOKE["LLM Invocation Layer"]
+        MG["Contextual Authorization Layer (PIM only)"]
+        LLM["LLM Client"]
+  end
+ subgraph DATA["Data Layer"]
+        LOG["Experiment Logger"]
+        DBS["Database Service"]
+  end
+ subgraph DB["Microsoft SQL Server"]
+        UDATA["Users<br>user_preferences"]
+        CDATA["Conversations<br>chat_messages"]
         ELOGS["experiment_logs"]
-        RMEM["Reserved Memory Tables<br/>user_behavior_profile<br/>conversation_context<br/>academic_memory"]
-    end
-
-    %% PRIMARY FLOW
-    UI --> API
-    API --> Router
-    Router --> USP
-    Router --> ACAD
-
-    %% DOMAIN TO LLM
-    USP --> MG
-    MG --> LLM
-    ACAD --> LLM
-
-    %% LLM PROVIDER
-    LLM --> EXT
+        RMEM["Reserved Memory Tables<br>user_behavior_profile<br>conversation_context<br>academic_memory"]
+  end
+    UI["React + Vite"] --> API["API & Auth Layer"]
+    API --> Router["Domain Router"] & UI
+    Router --> USP["Personal Interaction Module (PIM)"] & ACAD["Academic Handler"]
+    USP --> MG & PLI["Persistence & Logging Interface"]
+    MG --> LLM & PLI
+    ACAD --> LLM & PLI
+    LLM --> EXT["LLM Provider API"] & API
     EXT --> LLM
-
-    %% RESPONSE
-    LLM --> API
-    API --> UI
-
-    %% PERSISTENCE SIMPLIFICATION
-    USP --> PLI
-    ACAD --> PLI
-    MG --> PLI
     LOG --> PLI
-
     PLI --> DBS
     DBS --> DB
     LOG -.-> ELOGS
+    n1["Figure 2. High-Level Architecture of AURA v1.0"]
 
-    %% STYLES
+    n1@{ shape: text}
+     MG:::memory
+     LLM:::llm
+     LOG:::logger
+     DBS:::data
+     UI:::frontend
+     API:::backend
+     Router:::backend
+     USP:::domain
+     ACAD:::domain
+     PLI:::data
+     EXT:::external
     classDef frontend fill:#fdf6ec,stroke:#333,stroke-width:1px
     classDef backend fill:#eef3fb,stroke:#333,stroke-width:1px
     classDef domain fill:#e8f6ef,stroke:#333,stroke-width:1px

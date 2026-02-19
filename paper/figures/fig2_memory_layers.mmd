@@ -2,47 +2,35 @@
 config:
   look: classic
   theme: neo
+  layout: fixed
 ---
 flowchart TB
-
-    %% =========================
-    %% TOP ROW: MEMORY LAYERS
-    %% =========================
-
-    subgraph LAYERS["Memory Layers"]
-        direction LR
-
-        SC["Session Context<br/>• Prompt window<br/>• Ephemeral<br/>• Not persisted<br/>• Not logged"]:::session
-
-        ID["Identity Memory<br/>• Low-risk data<br/>• display_name<br/>• Greeting only"]:::identity
-
-        subgraph BM_LAYER["Behavioral Memory (Memory Gate Controlled)"]
-            BM["User Behavior Profile<br/>• Preferences<br/>• Style signals<br/><br/>Logged via memory_triggered flag"]:::behavioral
-            MG["Memory Gate v1.2<br/>• Domain-scoped (USP)<br/>• Explicit control"]:::gate
-        end
-    end
-
-    %% =========================
-    %% BOTTOM ROW: STORAGE
-    %% =========================
-
-    subgraph DB["Persistent Storage"]
-        UP["user_preferences"]:::storage
-        UBP["user_behavior_profile"]:::storage
-    end
-
-    %% =========================
-    %% STORAGE LINKS
-    %% =========================
-
+ subgraph BM_LAYER["Behavioral Memory (Memory Gate Controlled)"]
+        BM["User Behavior Profile<br>• Preferences<br>• Style signals<br><br>Logged via memory_triggered flag"]
+        MG["Contextual Authorization Layer<br>• Domain-scoped (PIM)<br>• Explicit control"]
+  end
+ subgraph LAYERS["Memory Layers"]
+    direction LR
+        SC["Session Context<br>• Prompt window<br>• Ephemeral<br>• Not persisted<br>• Not logged"]
+        ID["Identity Memory<br>• Low-risk data<br>• display_name<br>• Greeting only"]
+        BM_LAYER
+  end
+ subgraph DB["Persistent Storage"]
+        UP["user_preferences"]
+        UBP["user_behavior_profile"]
+  end
     ID --> UP
     BM --> MG
     MG --> UBP
+    n1["Figure 1. Memory Layer Separation in AURA v1.0 illustrating the distinction between session context, identity memory, and governed behavioral memory."]
 
-    %% =========================
-    %% STYLES
-    %% =========================
-
+    n1@{ shape: text}
+     BM:::behavioral
+     MG:::gate
+     SC:::session
+     ID:::identity
+     UP:::storage
+     UBP:::storage
     classDef session fill:#fdf6ec,stroke:#333,stroke-width:1px
     classDef identity fill:#eef3fb,stroke:#333,stroke-width:1px
     classDef behavioral fill:#e8f6ef,stroke:#333,stroke-width:1px
