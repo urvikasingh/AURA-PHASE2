@@ -5,43 +5,46 @@ from backend.core.chat_context_builder import build_chat_context
 
 
 ACADEMIC_SYSTEM_PROMPT = """
-You are an excellent teacher who explains complex topics clearly and kindly.
+You are an excellent teacher who explains concepts clearly and patiently.
 
-Your goal is to help the student understand without overwhelming them
-and without making them feel inadequate.
+You MUST follow the output format EXACTLY.
+If the format is violated, the answer is incorrect.
 
-STRICT OUTPUT RULES (must follow exactly):
+ABSOLUTE FORMATTING RULES (NON-NEGOTIABLE):
 
-- NEVER write a long paragraph.
-- Each paragraph must be at most 2 sentences.
-- Leave a blank line between every section.
-- Use simple language first, technical terms later.
-- Stop once the core idea is understood.
+- Each section MUST start on a new line.
+- There MUST be a blank line between sections.
+- NEVER merge sections into one paragraph.
+- NEVER stop mid-list.
+- COMPLETE all sections fully.
 
-REQUIRED STRUCTURE:
+REQUIRED STRUCTURE (USE THIS EXACTLY):
 
 Intuition:
-(2 short sentences explaining the idea simply)
+(Exactly 2 short sentences.)
+
+(blank line)
 
 Step-by-step:
-1. One short step.
-2. One short step.
-3. One short step.
+1. One complete short sentence.
+2. One complete short sentence.
+3. One complete short sentence.
+
+(blank line)
 
 Example:
-A simple, everyday example in 2 sentences.
+Exactly 2 sentences using a simple, real-life example.
+
+(blank line)
 
 Gentle follow-up:
-One optional line inviting the student to continue.
+One short inviting sentence.
 
-Tone rules:
-- Calm, respectful, and patient.
-- Never condescending.
-- Never say “this is simple” or “obviously”.
-
-Naming:
-- If addressed as “sir”, respond politely.
-- Do not introduce yourself or insist on a name.
+LANGUAGE RULES:
+- Simple words first, technical words later.
+- Calm and respectful tone.
+- Never say “obviously” or “this is simple”.
+- Do not introduce yourself.
 """
 
 
@@ -61,25 +64,25 @@ def academic_handler(
     if normalized in {"hi", "hello", "hey", "hii"}:
         return "Hello. What academic topic or question would you like help with?"
 
-    # 2️⃣ Load academic preferences (defaults for now)
+    # 2️⃣ Load academic preferences
     academic_memory = get_or_create_academic_memory(user_id)
 
-    explanation_style = academic_memory.get("explanation_style", "default")
-    difficulty_level = academic_memory.get("difficulty_level", "intermediate")
+    explanation_style = academic_memory.get("explanation_style", "step_by_step")
+    difficulty_level = academic_memory.get("difficulty_level", "beginner")
 
-    # 3️⃣ Load minimal conversation context (avoid token waste)
+    # 3️⃣ Load minimal conversation context
     history_block = ""
     if conversation_id:
         messages = get_conversation_messages(
             conversation_id=conversation_id,
-            limit=2,  # IMPORTANT: keep academic context short
+            limit=2,
         )
         if messages:
             history_block = build_chat_context(messages)
 
-    # 4️⃣ Build final prompt
+    # 4️⃣ BUILD PROMPT (RULES AT THE END — CRITICAL)
     prompt = f"""
-{ACADEMIC_SYSTEM_PROMPT}
+You are answering an academic question.
 
 Academic preferences:
 - Explanation style: {explanation_style}
@@ -91,15 +94,19 @@ Conversation context:
 Question:
 {message}
 
-Provide a clear academic explanation suitable for a learner.
+IMPORTANT — YOU MUST FOLLOW THESE OUTPUT RULES EXACTLY:
+{ACADEMIC_SYSTEM_PROMPT}
 """
 
     academic_generation_config = {
         "temperature": 0.3,
-        "max_output_tokens": 700,
+        "max_output_tokens": 1200,
     }
 
-    return generate_response(
+    raw_response = generate_response(
         prompt,
         generation_config=academic_generation_config,
     )
+
+    from backend.domains.academic.formatter import enforce_academic_format
+    return enforce_academic_format(raw_response)

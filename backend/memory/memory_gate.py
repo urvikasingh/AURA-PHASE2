@@ -3,11 +3,15 @@ import re
 from backend.db.connection import get_connection
 
 # =========================
-# 🧪 RESEARCH FLAG (NEW)
+# 🧪 RESEARCH FLAGS (CAL v1.3)
 # =========================
-_memory_triggered = False
+_memory_written = False
+_memory_accessed = False
 
 
+# =========================
+# 🎯 NAME EXTRACTION RULES
+# =========================
 NAME_PATTERNS = [
     r"\bmy name is ([A-Za-z]{2,})",
     r"\bi am called ([A-Za-z]{2,})",
@@ -23,20 +27,26 @@ def extract_name(message: str) -> str | None:
     return None
 
 
+# =========================
+# 🧠 MEMORY GATE (WRITE PATH)
+# =========================
 def run_memory_gate(*, user_id: int, message: str, domain: str):
     """
-    Memory Gate v1.2 + Research Instrumentation
+    Contextual Authorisation Layer (CAL) v1.3
 
-    - USP only
-    - Silent name memory
-    - Sticky identity (no auto-overwrite)
-    - Research-safe memory trigger flag
+    Behavior:
+    - USP domain only
+    - Explicit identity memory only (display_name)
+    - Silent memory (no confirmation)
+    - Sticky identity (no overwrite)
+    - Research-safe instrumentation
     """
 
-    global _memory_triggered
+    global _memory_written, _memory_accessed
 
-    # 🔄 Reset flag at start of each call
-    _memory_triggered = False
+    # 🔄 Reset flags at start of each call
+    _memory_written = False
+    _memory_accessed = False
 
     # 🧪 Test safety
     if os.getenv("TEST_MODE") == "true":
@@ -46,7 +56,7 @@ def run_memory_gate(*, user_id: int, message: str, domain: str):
     if domain != "usp":
         return
 
-    # 🔍 Extract name
+    # 🔍 Extract explicit name signal
     name = extract_name(message)
     if not name:
         return
@@ -55,7 +65,7 @@ def run_memory_gate(*, user_id: int, message: str, domain: str):
     cursor = conn.cursor()
 
     try:
-        # 🔎 Check if name already exists
+        # 🔎 Check if identity already exists
         cursor.execute(
             """
             SELECT preference_value
@@ -67,7 +77,7 @@ def run_memory_gate(*, user_id: int, message: str, domain: str):
         )
         row = cursor.fetchone()
 
-        # 🧠 Save ONLY if name does not exist yet
+        # 🧠 Write memory ONLY if not present
         if not row:
             cursor.execute(
                 """
@@ -78,25 +88,45 @@ def run_memory_gate(*, user_id: int, message: str, domain: str):
             )
             conn.commit()
 
-            # ✅ MEMORY WAS TRIGGERED (RESEARCH)
-            _memory_triggered = True
+            # ✅ MEMORY WRITE TRIGGERED
+            _memory_written = True
 
-        # If name exists → ignore (no overwrite, no trigger)
+        # If already exists → do nothing (no overwrite, no trigger)
 
     finally:
         conn.close()
 
 
 # =========================
-# 🧪 RESEARCH HELPER (NEW)
+# 🧠 MEMORY ACCESS MARKER (READ PATH)
+# =========================
+def mark_memory_accessed():
+    """
+    Called ONLY when stored memory is actually used
+    (e.g., name injected into USP response).
+    """
+    global _memory_accessed
+    _memory_accessed = True
+
+
+# =========================
+# 🧪 RESEARCH HELPER
 # =========================
 def was_memory_triggered() -> bool:
     """
     Used ONLY for experiment logging.
-    Returns whether memory was written in this turn.
-    Resets flag after read.
+
+    Returns True if memory was:
+    - written OR
+    - accessed (read)
+
+    Resets flags after read.
     """
-    global _memory_triggered
-    value = _memory_triggered
-    _memory_triggered = False
+    global _memory_written, _memory_accessed
+
+    value = _memory_written or _memory_accessed
+
+    _memory_written = False
+    _memory_accessed = False
+
     return value

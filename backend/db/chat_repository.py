@@ -40,7 +40,7 @@ def get_user_conversations(user_id: int):
         """
         SELECT id, domain, created_at, updated_at
         FROM conversations
-        WHERE user_id = ?
+        WHERE user_id = ? AND is_deleted=0
         ORDER BY updated_at DESC
         """,
         (user_id,)
@@ -221,13 +221,13 @@ def get_conversation_messages(
 
 def delete_conversation(conversation_id: int, user_id: int):
     """
-    Delete a conversation and all its messages.
-    Ensures the conversation belongs to the user.
+    Soft-delete a conversation.
+    Messages are removed, conversation is retained for FK safety.
     """
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Safety check: ownership
+    # Ownership check
     cursor.execute(
         """
         SELECT 1
@@ -241,7 +241,7 @@ def delete_conversation(conversation_id: int, user_id: int):
         conn.close()
         raise PermissionError("Conversation does not belong to user")
 
-    # Delete messages first (FK-safe)
+    # Delete messages (safe)
     cursor.execute(
         """
         DELETE FROM chat_messages
@@ -250,10 +250,12 @@ def delete_conversation(conversation_id: int, user_id: int):
         (conversation_id,)
     )
 
-    # Delete conversation
+    # 🔒 SOFT DELETE conversation (CRITICAL FIX)
     cursor.execute(
         """
-        DELETE FROM conversations
+        UPDATE conversations
+        SET is_deleted = 1,
+            updated_at = GETDATE()
         WHERE id = ?
         """,
         (conversation_id,)

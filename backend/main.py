@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.auth import router as auth_router
-from backend.api.chat import router as chat_router   # 👈 ADD THIS
+from backend.api.chat import router as chat_router
 from backend.api import conversations
 from backend.api import chat_history
 
@@ -17,9 +17,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ REGISTER ROUTERS
+# REGISTER ROUTERS
 app.include_router(auth_router)
-app.include_router(chat_router)   # 👈 ADD THIS
+app.include_router(chat_router)
 app.include_router(conversations.router)
 app.include_router(chat_history.router)
 

@@ -150,6 +150,7 @@ body,
   font-size: 15px;
   line-height: 1.55;
   max-width: 80%;
+    white-space: pre-wrap;   /* ✅ PRESERVE LINE BREAKS */
 
   /* Passive messages */
   pointer-events: none;

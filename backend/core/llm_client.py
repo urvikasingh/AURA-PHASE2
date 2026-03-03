@@ -21,34 +21,19 @@ def generate_response(
     Central LLM adapter.
 
     - Domain-aware
-    - TEST_MODE-safe (no external API calls)
-    - Production-safe (Gemini hardened)
+    - TEST_MODE-safe
+    - Gemini-compatible (NO system_instruction)
     """
 
     # =========================
-    # 🧪 TEST MODE (NO GEMINI)
+    # 🧪 TEST MODE
     # =========================
     if TEST_MODE:
-        # Academic domain stub
-        if domain == "academic":
-            return (
-                "[ACADEMIC MODE]\n"
-                "Explanation style: step-by-step\n"
-                "Difficulty level: medium\n\n"
-                "Answer:\n"
-                "This is a test-safe academic explanation."
-            )
-
-        # USP / general domain stub
-        prompt_lower = full_prompt.lower()
-
-        if "hello" in prompt_lower or "hi" in prompt_lower:
-            return "Hello. How can I help you today?"
-
-        if "gravity" in prompt_lower:
-            return "Gravity is a force that attracts objects toward each other."
-
-        return "I’m here to help."
+        return (
+            "[TEST MODE]\n\n"
+            "This is a safe, complete response.\n"
+            "No external API call was made."
+        )
 
     # =========================
     # 🚀 REAL MODE (Gemini)
@@ -61,39 +46,38 @@ def generate_response(
 
         client = genai.Client(api_key=GEMINI_API_KEY)
 
-        # ✅ Default generation config (safe + complete replies)
-        if generation_config is None:
-            generation_config = {
-                "temperature": 0.7,
-                "max_output_tokens": 300,
-            }
+        # 🔒 Hard safety defaults
+        final_config = {
+            "temperature": 0.4,
+            "max_output_tokens": 1200,
+        }
 
+        if generation_config:
+            final_config.update(generation_config)
+
+        # ❗ IMPORTANT:
+        # Gemini expects ONE merged prompt
         response = client.models.generate_content(
             model="models/gemini-2.5-flash",
             contents=full_prompt,
-            config=generation_config,
+            config=final_config,
         )
 
         # =========================
-        # 🛡️ SAFE RESPONSE PARSING
+        # 🛡️ Safe parsing
         # =========================
         full_text = ""
 
         candidates = getattr(response, "candidates", None)
-
         if candidates:
             for candidate in candidates:
                 content = getattr(candidate, "content", None)
                 parts = getattr(content, "parts", []) if content else []
-
                 for part in parts:
                     text = getattr(part, "text", "")
                     if text:
                         full_text += text
 
-        # =========================
-        # 🧯 FALLBACK
-        # =========================
         if not full_text.strip():
             return "I’m having trouble generating a response right now."
 

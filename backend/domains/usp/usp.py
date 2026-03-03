@@ -1,7 +1,10 @@
 from backend.core.llm_client import generate_response
 from backend.db.chat_repository import get_conversation_messages
 from backend.core.chat_context_builder import build_chat_context
-from backend.memory.memory_gate import run_memory_gate
+from backend.memory.memory_gate import (
+    run_memory_gate,
+    mark_memory_accessed,   # ✅ ADDED
+)
 from backend.memory.readers import get_display_name
 from backend.db.chat_repository import (
     has_conversation_greeted,
@@ -40,7 +43,7 @@ def usp_handler(
     - Personality is prompt-driven (no logic branching)
     """
 
-    # 🧠 Memory Gate (USP-only, silent)
+    # 🧠 Memory Gate (USP-only, silent WRITE path)
     run_memory_gate(
         user_id=user_id,
         message=message,
@@ -59,18 +62,22 @@ def usp_handler(
     greeting_instruction = ""
 
     if (
-            conversation_id is not None
-            and not has_conversation_greeted(conversation_id)
-            and is_greeting_or_vague(message)
-            and not TEST_MODE
+        conversation_id is not None
+        and not has_conversation_greeted(conversation_id)
+        and is_greeting_or_vague(message)
+        and not TEST_MODE
     ):
         display_name = get_display_name(user_id)
+
         if display_name:
+            # ✅ MEMORY READ IS ACTUALLY USED HERE
+            mark_memory_accessed()
+
             greeting_instruction = f"""
-    Start your response by greeting the user by name ONCE.
-    The user's name is {display_name}.
-    Do NOT repeat the name again later.
-    """
+Start your response by greeting the user by name ONCE.
+The user's name is {display_name}.
+Do NOT repeat the name again later.
+"""
             mark_conversation_greeted(conversation_id)
 
     personality_spine = """You are USP — a calm, thoughtful, and friendly digital companion.
@@ -103,7 +110,7 @@ BOUNDARIES:
   Example:
   “That’s not something I can get into, but if you want to talk about what brought it up,
   I’m here.”
-  
+
 CLARIFICATION:
 - You may explain sensitive or political topics at a high level in a neutral,
   factual, and non-judgmental way.
@@ -145,13 +152,14 @@ Conversation so far:
 User message:
 {message}
 
-Respond naturally, clearly,with presence and complete your thoughts.
+Respond naturally, clearly, with presence and complete your thoughts.
 """
 
     usp_generation_config = {
         "temperature": 0.7,
         "max_output_tokens": 1024,
     }
+
     return generate_response(
         full_prompt,
         generation_config=usp_generation_config,

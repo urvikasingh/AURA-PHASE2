@@ -1,6 +1,4 @@
-/* =====================================================
-   DROP DATABASE (SAFE RECREATE)
-   ===================================================== */
+--RESET THE DB
 USE master;
 GO
 
@@ -13,8 +11,12 @@ BEGIN
 END
 GO
 
+
+-- rest of your CREATE TABLE statements
+
+
 /* =====================================================
-   CREATE DATABASE
+   DATABASE
    ===================================================== */
 CREATE DATABASE AURA_PHASE2;
 GO
@@ -29,20 +31,13 @@ CREATE TABLE users (
     id INT IDENTITY(1,1) PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255),
-
-
     created_at DATETIME DEFAULT GETDATE()
 );
 GO
 
-
 /* =====================================================
    USER PREFERENCES (LONG-TERM MEMORY)
    ===================================================== */
--- user_preferences
--- Used for USP long-term human memory:
--- e.g. display_name, tone, relationship preferences
-
 CREATE TABLE user_preferences (
     id INT IDENTITY(1,1) PRIMARY KEY,
     user_id INT NOT NULL,
@@ -106,32 +101,39 @@ GO
    CONVERSATIONS (CHAT SESSIONS)
    ===================================================== */
 CREATE TABLE conversations (
-    id INT IDENTITY PRIMARY KEY,
+    id INT IDENTITY(1,1) PRIMARY KEY,
     user_id INT NOT NULL,
     domain VARCHAR(50) NOT NULL,
     has_greeted BIT DEFAULT 0,
-    created_at DATETIME DEFAULT GETDATE(),
-    updated_at DATETIME DEFAULT GETDATE()
-);
 
+    -- 🔒 SOFT DELETE FLAG (CRITICAL)
+    is_deleted BIT DEFAULT 0,
+
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE(),
+
+    CONSTRAINT fk_conversation_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+);
 GO
 
 CREATE INDEX idx_conversations_user_updated
 ON conversations (user_id, updated_at DESC);
 GO
 
+CREATE INDEX idx_conversations_active
+ON conversations (user_id, is_deleted);
+GO
+
 /* =====================================================
-   CHAT MESSAGES (CHAT HISTORY)
+   CHAT MESSAGES
    ===================================================== */
 CREATE TABLE chat_messages (
     id INT IDENTITY(1,1) PRIMARY KEY,
-
     conversation_id INT NOT NULL,
     user_id INT NOT NULL,
-
-    role VARCHAR(20) NOT NULL,        -- 'user' | 'assistant'
+    role VARCHAR(20) NOT NULL,      -- 'user' | 'assistant'
     content VARCHAR(MAX) NOT NULL,
-
     created_at DATETIME DEFAULT GETDATE(),
 
     CONSTRAINT fk_message_conversation
@@ -148,44 +150,30 @@ GO
 
 /* =====================================================
    EXPERIMENT LOGS (RESEARCH INSTRUMENTATION)
-   -----------------------------------------------------
-   This table is used ONLY for empirical evaluation
-   and does NOT affect application behavior.
    ===================================================== */
+CREATE TABLE experiment_logs (
+    id INT IDENTITY(1,1) PRIMARY KEY,
 
-IF NOT EXISTS (
-    SELECT 1
-    FROM sys.tables
-    WHERE name = 'experiment_logs'
-)
-BEGIN
-    CREATE TABLE experiment_logs (
-        id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    conversation_id INT NOT NULL,
 
-        user_id INT NOT NULL,
-        conversation_id INT NOT NULL,
+    domain VARCHAR(50) NOT NULL,
+    memory_triggered BIT DEFAULT 0,
 
-        domain VARCHAR(50) NOT NULL,
+    latency_ms FLOAT NOT NULL,
+    input_length INT,
+    output_length INT,
 
-        memory_triggered BIT DEFAULT 0,
+    created_at DATETIME DEFAULT GETDATE(),
 
-        latency_ms FLOAT NOT NULL,
+    CONSTRAINT fk_experiment_user
+        FOREIGN KEY (user_id) REFERENCES users(id),
 
-        input_length INT,
-        output_length INT,
+    CONSTRAINT fk_experiment_conversation
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+);
+GO
 
-        created_at DATETIME DEFAULT GETDATE(),
-
-        CONSTRAINT fk_experiment_user
-            FOREIGN KEY (user_id)
-            REFERENCES users(id),
-
-        CONSTRAINT fk_experiment_conversation
-            FOREIGN KEY (conversation_id)
-            REFERENCES conversations(id)
-    );
-
-    CREATE INDEX idx_experiment_domain
-        ON experiment_logs (domain);
-END;
+CREATE INDEX idx_experiment_domain
+ON experiment_logs (domain);
 GO

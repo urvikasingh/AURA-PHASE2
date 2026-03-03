@@ -19,10 +19,10 @@ export default function ChatbotPage() {
 
   const storageKey = `aura_active_conversation_${domain}`;
 
-  const [conversationId, setConversationId] = useState(() => {
-    const saved = localStorage.getItem(storageKey);
-    return saved ? Number(saved) : null;
-  });
+  /* =========================
+     CONVERSATION ID
+  ========================= */
+  const [conversationId, setConversationId] = useState(null);
 
   /* =========================
      SCROLL TO BOTTOM
@@ -32,13 +32,19 @@ export default function ChatbotPage() {
   }, [messages]);
 
   /* =========================
-     RESET ON DOMAIN CHANGE
+     RESTORE CONVERSATION ID
+     (REFRESH-SAFE)
   ========================= */
   useEffect(() => {
-    setMessages([]);
-    setConversationId(null);
-    localStorage.removeItem(storageKey);
-  }, [domain]);
+    const saved = localStorage.getItem(storageKey);
+
+    if (saved) {
+      setConversationId(Number(saved));
+    } else {
+      setConversationId(null);
+      setMessages([]);
+    }
+  }, [storageKey]);
 
   /* =========================
      LOAD SIDEBAR CONVERSATIONS
@@ -50,7 +56,7 @@ export default function ChatbotPage() {
   }, [domain]);
 
   /* =========================
-     RESTORE CHAT ON REFRESH
+     RESTORE CHAT HISTORY
   ========================= */
   useEffect(() => {
     if (!conversationId) return;
@@ -89,7 +95,7 @@ export default function ChatbotPage() {
   };
 
   /* =========================
-     NEW CHAT
+     NEW CHAT (USER INTENT)
   ========================= */
   const startNewChat = () => {
     setConversationId(null);
@@ -99,7 +105,6 @@ export default function ChatbotPage() {
 
   /* =========================
      DELETE CONVERSATION
-     (FIXED — ALWAYS RESET CHAT)
   ========================= */
   const handleDeleteConversation = async (convId) => {
     try {
@@ -107,16 +112,13 @@ export default function ChatbotPage() {
         method: "DELETE",
       });
 
-      // Remove from sidebar
       setConversations((prev) =>
         prev.filter(
           (c) => (c.id ?? c.conversation_id) !== convId
         )
       );
 
-      // ✅ ALWAYS reset chat (no ID comparison)
       startNewChat();
-
       setDeleteTarget(null);
     } catch (err) {
       console.error("Failed to delete conversation", err);
